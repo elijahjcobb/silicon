@@ -5,7 +5,7 @@ providing a type-safe object-oriented wrapper of the MongoDB driver. Also includ
 query driver.
 
 ## Pages
-View [the wiki](https://github.com/elijahjcobb/silicon/wiki) for more information.
+View [the wiki](https://github.com/element-ts/silicon/wiki) for more information.
 
 ## Example
 Create an interface for what types your class contains.
@@ -37,16 +37,16 @@ await user.fetch();
 await user.delete();
 ```
 
-[see more examples...](https://github.com/elijahjcobb/silicon/wiki/Example)
+[see more examples...](https://github.com/element-ts/silicon/wiki/Example)
 ## Features
 
 ### Prototyping
 Like the example above, you can very easily create an object and use it without having to directly talk to a database.
-To view more information on how you can do prototyping, view the [object page](https://github.com/elijahjcobb/silicon/wiki/Object).
+To view more information on how you can do prototyping, view the [object page](https://github.com/element-ts/silicon/wiki/Object).
 
 ### Queries
 You can make type-safe queries using the `SiQuery` class. Do helpful things like `count()`, `find()`, `exists()` and
-much more. View the [query page](https://github.com/elijahjcobb/silicon/wiki/Query) for more information.
+much more. View the [query page](https://github.com/element-ts/silicon/wiki/Query) for more information.
 
 ### Type-Safety
 Everything is type-safe when you program in [TypeScript](https://www.typescriptlang.org/). Your class properties, and
@@ -56,16 +56,9 @@ invalid property name, and much more.
 ## About
 
 ### Language
-All of hydrogen is written in [TypeScript](https://www.typescriptlang.org/). If you do not know how to use TypeScript
+All of silicon is written in [TypeScript](https://www.typescriptlang.org/). If you do not know how to use TypeScript
 don't worry. It is completely compatible with JavaScript.
-
-### Why?
-I started this package to use in all my different projects. This is sort of a V2 to a package I wrote in 2018.
-I took everything I learned from the original package and used it. I named it hydrogen because I think element
-names are cool and hydrogen is kind of a building block for different bonds.
 
 ### Author/Maintainer
 My name is [Elijah Cobb](https://elijahcobb.com/). I am a computer science student at
-[Michigan Technological University](https://mtu.edu). I have worked for a few start ups, one right out of high school.
-I am now the back-end developer for a few small projects and so this package is sort of the base of all my projects.
-When I need a feature I add it to this package.
+[Michigan Technological University](https://mtu.edu).
