@@ -115,7 +115,7 @@ export class SiQuery<T extends SiObject<P>, P extends object> {
 
 	public async exists(): Promise<boolean> {
 
-		return (await this.count()) >= 1;
+		return (await this.count()) > 0;
 
 	}
 

@@ -34,7 +34,8 @@
 		"mongodb": "latest",
 		"@ejc-tsds/arraylist": "latest",
 		"@ejc-tsds/dictionary": "latest",
-		"@types/mongodb": "latest"
+		"@types/mongodb": "latest",
+		"@element-ts/neon": "latest"
 	},
 	"devDependencies": {
 		"@types/node": "latest",

@@ -19,7 +19,7 @@ class User extends SiObject<UserProps> {
 
 (async (): Promise<void> => {
 
-	await SiDatabase.init({address: "mongodb://localhost:27017", database: "silicon", verbose: false});
+	await SiDatabase.init({address: "mongodb://localhost:27017", database: "silicon", debug: false});
 
 	const user: User = new User();
 	user.props.name = "Elijah";
