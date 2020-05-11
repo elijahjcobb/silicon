@@ -131,7 +131,7 @@ export abstract class SiObject<T extends object = object> {
 
 		// This set the id to the underlying id from mongo.
 		// @ts-ignore
-		this.id = properties["_id"];
+		this.id = properties["_id"]["id"].toString("hex");
 
 		this.updatedAt = properties.updatedAt;
 		this.createdAt = properties.createdAt;
