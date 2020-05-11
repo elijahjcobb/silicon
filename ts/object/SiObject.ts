@@ -11,6 +11,7 @@
 import {Neon} from "@element-ts/neon";
 import {SiDatabase} from "../database/SiDatabase";
 import * as MongoDB from "mongodb";
+import {type} from "os";
 
 export type SiObjectBaseProperties = Partial<{updatedAt: number, createdAt: number}>;
 export type SiObjectUserProperties<T extends object> = Partial<T>;
@@ -188,8 +189,7 @@ export abstract class SiObject<T extends object = object> {
 		const obj: SiObjectProperties<T> = this.encode();
 		const res: MongoDB.InsertOneWriteOpResult<any> = await collection.insertOne(obj);
 
-		this.id = res.insertedId;
-
+		this.id = res.insertedId.id.toString("hex");
 
 		Neon.log( `SiObject did save.`);
 		this.objectDidCreate();

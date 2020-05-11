@@ -1,47 +1,47 @@
 {
-	"name": "@element-ts/silicon",
-	"version": "0.1.12",
-	"description": "A package to send and receive data using promises.",
-	"keywords": [],
-	"main": "js/index",
-	"types": "dts/index",
-	"files": [
-		"js",
-		"dts"
-	],
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"prepublishOnly": "npm run compile",
-		"compile": "npm run clean && /usr/local/bin/tsc -p ./tsconfig.json",
-		"watch": "tsc -w -p .",
-		"clean": "rm -rf dts && rm -rf js",
-		"start": "node js/index.js"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/element-ts/silicon.git"
-	},
-	"publishConfig": {
-		"access": "public"
-	},
-	"author": "Elijah Cobb <elijah@elijahcobb.com> (https://elijahcobb.com/)",
-	"license": "MIT",
-	"bugs": {
-		"url": "https://github.com/element-ts/silicon/issues"
-	},
-	"homepage": "https://github.com/element-ts/silicon#readme",
-	"dependencies": {
-		"mongodb": "latest",
-		"@ejc-tsds/arraylist": "latest",
-		"@ejc-tsds/dictionary": "latest",
-		"@types/mongodb": "latest",
-		"@element-ts/neon": "latest"
-	},
-	"devDependencies": {
-		"@types/node": "latest",
-		"typescript": "latest",
-		"tslint": "latest",
-		"jest": "latest",
-		"@types/jest": "latest"
-	}
+  "name": "@element-ts/silicon",
+  "version": "0.1.13",
+  "description": "A package to send and receive data using promises.",
+  "keywords": [],
+  "main": "js/index",
+  "types": "dts/index",
+  "files": [
+    "js",
+    "dts"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run compile",
+    "compile": "npm run clean && /usr/local/bin/tsc -p ./tsconfig.json",
+    "watch": "tsc -w -p .",
+    "clean": "rm -rf dts && rm -rf js",
+    "start": "node js/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/element-ts/silicon.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Elijah Cobb <elijah@elijahcobb.com> (https://elijahcobb.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/element-ts/silicon/issues"
+  },
+  "homepage": "https://github.com/element-ts/silicon#readme",
+  "dependencies": {
+    "mongodb": "latest",
+    "@ejc-tsds/arraylist": "latest",
+    "@ejc-tsds/dictionary": "latest",
+    "@types/mongodb": "latest",
+    "@element-ts/neon": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest",
+    "tslint": "latest",
+    "jest": "latest",
+    "@types/jest": "latest"
+  }
 }
