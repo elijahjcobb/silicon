@@ -29,7 +29,7 @@ export abstract class SiObject<T extends object = object> {
 	protected constructor(collection: string) {
 
 		this.collection = collection;
-		Neon.log(`SiObject created for '${collection}' collection.`);
+		SiDatabase.neon.log(`SiObject created for '${collection}' collection.`);
 		this.props = {} as SiObjectUserProperties<T>;
 
 	}
@@ -80,7 +80,7 @@ export abstract class SiObject<T extends object = object> {
 	 */
 	protected encode(): SiObjectProperties<T> {
 
-		Neon.log( `SiObject will encode.`);
+		SiDatabase.neon.log( `SiObject will encode.`);
 		this.objectWillEncode();
 
 		const obj: SiObjectProperties<T> = this.props as SiObjectProperties<T>;
@@ -88,7 +88,7 @@ export abstract class SiObject<T extends object = object> {
 		obj.updatedAt = this.updatedAt;
 		obj.createdAt = this.createdAt;
 
-		Neon.log(`SiObject did encode.`);
+		SiDatabase.neon.log(`SiObject did encode.`);
 		this.objectDidEncode();
 
 		return obj;
@@ -287,7 +287,7 @@ export abstract class SiObject<T extends object = object> {
 	 */
 	public decode(obj: object): void {
 
-		Neon.log(`SiObject will decode.`);
+		SiDatabase.neon.log(`SiObject will decode.`);
 		this.objectWillDecode();
 
 		const properties: SiObjectProperties<T> = obj as SiObjectProperties<T>;
@@ -323,7 +323,7 @@ export abstract class SiObject<T extends object = object> {
 			}
 		}
 
-		Neon.log(`SiObject did decode.`);
+		SiDatabase.neon.log(`SiObject did decode.`);
 		this.objectDidDecode();
 
 	}
@@ -333,7 +333,7 @@ export abstract class SiObject<T extends object = object> {
 	 */
 	public async create(): Promise<void> {
 
-		Neon.log( `SiObject will save.`);
+		SiDatabase.neon.log( `SiObject will save.`);
 		this.objectWillCreate();
 
 		const collection: MongoDB.Collection = this.getDatabaseCollection();
@@ -348,7 +348,7 @@ export abstract class SiObject<T extends object = object> {
 
 		this.decodeId(res.insertedId);
 
-		Neon.log( `SiObject did save.`);
+		SiDatabase.neon.log( `SiObject did save.`);
 		this.objectDidCreate();
 
 	}
@@ -359,7 +359,7 @@ export abstract class SiObject<T extends object = object> {
 	 */
 	public async update(...keys: SiObjectPropertyKeys<T>[]): Promise<void> {
 
-		Neon.log( `SiObject will update.`);
+		SiDatabase.neon.log( `SiObject will update.`);
 		this.objectWillUpdate();
 
 		const collection: MongoDB.Collection = this.getCollectionForModification();
@@ -386,7 +386,7 @@ export abstract class SiObject<T extends object = object> {
 		const newValues: object = {$set: valuesToSet};
 		await collection.updateOne({_id: this.getMongoId()}, newValues);
 
-		Neon.log( `SiObject did update.`);
+		SiDatabase.neon.log( `SiObject did update.`);
 		this.objectDidUpdate();
 
 	}
@@ -397,7 +397,7 @@ export abstract class SiObject<T extends object = object> {
 	 */
 	public async fetch(id?: string): Promise<void> {
 
-		Neon.log( `SiObject will fetch.`);
+		SiDatabase.neon.log( `SiObject will fetch.`);
 		this.objectWillFetch();
 
 		if (id) this.id = id;
@@ -408,7 +408,7 @@ export abstract class SiObject<T extends object = object> {
 
 		this.decode(res);
 
-		Neon.log( `SiObject did fetch.`);
+		SiDatabase.neon.log( `SiObject did fetch.`);
 		this.objectDidFetch();
 
 	}
@@ -419,7 +419,7 @@ export abstract class SiObject<T extends object = object> {
 	 */
 	public async delete(id?: string): Promise<void> {
 
-		Neon.log( `SiObject will delete.`);
+		SiDatabase.neon.log( `SiObject will delete.`);
 		this.objectWillDelete();
 
 		if (id) this.id = id;
@@ -427,7 +427,7 @@ export abstract class SiObject<T extends object = object> {
 		const collection: MongoDB.Collection = this.getCollectionForModification();
 		await collection.deleteOne({_id: this.getMongoId()});
 
-		Neon.log( `SiObject did delete.`);
+		SiDatabase.neon.log( `SiObject did delete.`);
 		this.objectDidDelete();
 
 	}

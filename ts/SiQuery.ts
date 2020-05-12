@@ -123,4 +123,12 @@ export class SiQuery<T extends SiObject<P>, P extends object> {
 
 	}
 
+	public static async getAll<T extends SiObject<P>, P extends object>(factory: SiObjectFactory<T, P>, limit: number = 100): Promise<T[]> {
+
+		const query: SiQuery<T, P> = new SiQuery<T, P>(factory, {});
+		query.setLimit(limit);
+		return await query.getAll();
+
+	}
+
 }

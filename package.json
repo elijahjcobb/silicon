@@ -1,6 +1,6 @@
 {
   "name": "@element-ts/silicon",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A package to send and receive data using promises.",
   "keywords": [],
   "main": "js/index",
@@ -31,17 +31,17 @@
   },
   "homepage": "https://github.com/element-ts/silicon#readme",
   "dependencies": {
-    "mongodb": "latest",
     "@ejc-tsds/arraylist": "latest",
     "@ejc-tsds/dictionary": "latest",
-    "@types/mongodb": "latest",
-    "@element-ts/neon": "latest"
+    "@element-ts/neon": "^1.0.1",
+    "@types/mongodb": "^3.5.16",
+    "mongodb": "^3.5.7"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "typescript": "latest",
-    "tslint": "latest",
-    "jest": "latest",
-    "@types/jest": "latest"
+    "@types/jest": "^25.2.1",
+    "@types/node": "^13.13.5",
+    "jest": "^26.0.1",
+    "tslint": "^6.1.2",
+    "typescript": "^3.8.3"
   }
 }
