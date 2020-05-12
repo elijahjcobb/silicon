@@ -5,6 +5,6 @@
  * github.com/elijahjcobb
  */
 
-export {SiObjectProperties, SiObjectPropertyKeys, SiObject, SiObjectUserProperties, SiObjectBaseProperties} from "./object/SiObject";
-export {SiDatabase, SiDatabaseConstructor} from "./database/SiDatabase";
-export {SiQuery, SiObjectFactory} from "./query/SiQuery";
+export * from "./SiObject";
+export * from "./SiDatabase";
+export * from "./SiQuery";

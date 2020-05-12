@@ -1,11 +1,8 @@
 /**
- *
  * Elijah Cobb
- *
  * elijah@elijahcobb.com
  * elijahcobb.com
  * github.com/elijahjcobb
- *
  */
 
 import {Neon} from "@element-ts/neon";

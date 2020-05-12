@@ -1,14 +1,11 @@
 /**
- *
  * Elijah Cobb
- *
  * elijah@elijahcobb.com
  * elijahcobb.com
  * github.com/elijahjcobb
- *
  */
 
-import {SiObject, SiDatabase} from "..";
+import {SiObject, SiDatabase} from "./index";
 import * as MongoDB from "mongodb";
 
 export type SiObjectFactory<T, P> = { new<P>(): T };
