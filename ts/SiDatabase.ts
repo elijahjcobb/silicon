@@ -46,6 +46,10 @@ export class SiDatabase {
 
 	}
 
+	public getDatabaseName(): string {
+		return this.database;
+	}
+
 	public getDatabase(): MongoDB.Db {
 
 		SiDatabase.neon.log("Database will get database.");

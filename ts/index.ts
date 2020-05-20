@@ -5,6 +5,6 @@
  * github.com/elijahjcobb
  */
 
-export * from "./SiObjectOld";
+export * from "./SiObject";
 export * from "./SiDatabase";
 export * from "./SiQuery";

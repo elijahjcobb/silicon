@@ -5,29 +5,21 @@
  * github.com/elijahjcobb
  */
 
-import {SiObjectOld, SiDatabase} from "./index";
+import {SiObject, SiDatabase, SiObjectBaseProperties, SiObjectProps} from "./index";
 import * as MongoDB from "mongodb";
 
 export type SiObjectFactory<T, P> = { new<P>(): T };
 
-type SiQueryConstructAllowedKey = {
-	"$lt": true,
-	"$gt": true,
-	"$lte": true,
-	"$gte": true,
-	"$ne": true,
-	"$in": true,
-	"$nin": true
-};
+type SiQueryConstructAllowedKey = "$lt" | "$gt" | "$lte" | "$gte" | "$ne" | "$in" | "$nin";
 type SiQueryConstructAllowedBaseValue = string | number | boolean | MongoDB.ObjectID;
 type SiQueryConstructAllowedValue<P extends object> = SiQueryConstructAllowedBaseValue | {
-	[key in keyof SiQueryConstructAllowedKey]?: SiQueryConstructAllowedBaseValue | string[] | number[]
+	[key in SiQueryConstructAllowedKey]?: SiQueryConstructAllowedBaseValue | string[] | number[]
 } | SiQueryConstructor<P>[];
 type SiQueryConstructor<P extends object> = {
 	[key in keyof P]?: SiQueryConstructAllowedValue<P>;
 } | { [key in keyof {"updatedAt": 1, "createdAt": 1, "_id": 1, "$or": 1}]?: SiQueryConstructAllowedValue<P>};
 
-export class SiQuery<T extends SiObjectOld<P>, P extends object> {
+export class SiQuery<T extends SiObject<P>, P extends SiObjectProps<P>> {
 
 	private readonly factory: SiObjectFactory<T, P>;
 	private readonly collectionString: string;
@@ -94,7 +86,7 @@ export class SiQuery<T extends SiObjectOld<P>, P extends object> {
 		return responsesUnformed.map((response: object): T => {
 
 			const obj: T = this.initializeNewObject();
-			obj.decode(response);
+			obj.decode(response as P & SiObjectBaseProperties);
 
 			return obj;
 
@@ -116,14 +108,14 @@ export class SiQuery<T extends SiObjectOld<P>, P extends object> {
 
 	}
 
-	public static async getObjectForId<T extends SiObjectOld<P>, P extends object>(factory: SiObjectFactory<T, P>, id: string): Promise<T | undefined> {
+	public static async getObjectForId<T extends SiObject<P>, P extends object>(factory: SiObjectFactory<T, P>, id: string): Promise<T | undefined> {
 
 		const query: SiQuery<T, P> = new SiQuery<T, P>(factory, {_id: new MongoDB.ObjectId(id)});
 		return await query.getFirst();
 
 	}
 
-	public static async getAll<T extends SiObjectOld<P>, P extends object>(factory: SiObjectFactory<T, P>, limit: number = 100): Promise<T[]> {
+	public static async getAll<T extends SiObject<P>, P extends object>(factory: SiObjectFactory<T, P>, limit: number = 100): Promise<T[]> {
 
 		const query: SiQuery<T, P> = new SiQuery<T, P>(factory, {});
 		query.setLimit(limit);
