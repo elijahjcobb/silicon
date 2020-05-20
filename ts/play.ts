@@ -5,16 +5,44 @@
  * github.com/elijahjcobb
  */
 
-import {SiDatabase, SiObject, SiQuery} from "./index";
+import {SiDatabase, SiObjectOld, SiQuery} from "./index";
+import {SiLink} from "./SiLink";
 
-interface UserProps { name: string; age: number; data: Buffer; }
-class User extends SiObject<UserProps> {public constructor() { super("user"); }}
+interface StoryProps {
+	title: string;
+	content: string;
+}
+
+class Story extends SiObjectOld<StoryProps> {
+
+	public constructor() {
+		super("story");
+	}
+
+}
+
+interface UserProps {
+	name: string;
+	age: number;
+	data: Buffer;
+	story: SiLink<Story>;
+}
+
+class User extends SiObjectOld<UserProps> {
+
+	public constructor() {
+		super("user");
+	}
+
+}
 
 (async (): Promise<void> => {
 
-	await SiDatabase.init({address: "mongodb://localhost:27017", database: "silicon", debug: false});
+	// await SiDatabase.init({address: "mongodb://localhost:27017", database: "silicon", debug: false});
+	const user = new User();
+	user.props.name = "Elijah";
+	user.props.story = new SiLink("");
 
-	const user: User | undefined = await SiQuery.getObjectForId(User, "5ebacc214ce0a0460435afd5");
-	if (user === undefined) return;
+	user.props.story.
 
 })().then((): void => SiDatabase.close()).catch((err: any): void => console.error(err));

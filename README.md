@@ -12,9 +12,9 @@ Create an interface for what types your class contains.
 ```typescript
 interface UserProps { name: string; age: number; }
 ```
-Create a class by extending `SiObject<T extends object>` and use your interface.
+Create a class by extending `SiObjectOld<T extends object>` and use your interface.
 ```typescript
-class User extends SiObject<UserProps> {
+class User extends SiObjectOld<UserProps> {
 
     public constructor() { super("table-name"); }
 	

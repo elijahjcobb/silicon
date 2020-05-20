@@ -6,7 +6,7 @@ afterEach(async (): Promise<void> => {
 
 });
 
-describe("SiObject Methods", async(): Promise<void> => {
+describe("SiObjectOld Methods", async(): Promise<void> => {
 
 	test("test", async(): Promise<void> => {
 
@@ -16,7 +16,7 @@ describe("SiObject Methods", async(): Promise<void> => {
 
 });
 
-describe("SiObject Props Types", async(): Promise<void> => {
+describe("SiObjectOld Props Types", async(): Promise<void> => {
 
 	test("test", async(): Promise<void> => {
 

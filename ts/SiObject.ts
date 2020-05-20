@@ -5,432 +5,150 @@
  * github.com/elijahjcobb
  */
 
-import {Neon} from "@element-ts/neon";
-import {SiDatabase} from "./index";
-import * as MongoDB from "mongodb";
+import * as Mongo from "mongodb";
+import {SiDatabase} from "./SiDatabase";
 
-export type SiObjectBaseProperties = Partial<{updatedAt: number, createdAt: number, id: string}>;
-export type SiObjectUserProperties<T extends object> = Partial<T>;
-export type SiObjectProperties<T extends object> = SiObjectBaseProperties & SiObjectUserProperties<T>;
-export type SiObjectPropertyKeys<T extends object> = keyof SiObjectProperties<T>;
+export type SiObjectPropValue = any;
+export type SiObjectProps<T extends object = {}> = { [key in keyof T]: SiObjectPropValue; };
+export type SiObjectBaseProperties = { id: string | undefined, updatedAt: number, createdAt: number };
 
-export abstract class SiObject<T extends object = object> {
+export class SiObject<T extends SiObjectProps<T>> {
 
-	private id: string | undefined;
-	private updatedAt: number | undefined;
-	private createdAt: number | undefined;
+	private _id: Mongo.ObjectId | undefined;
+	private _updatedAt: number;
+	private _createdAt: number;
+	private props: T;
 	private readonly collection: string;
-	public props: SiObjectUserProperties<T>;
 
-	/**
-	 * Protected constructor that should be called via super().
-	 * @param collection The name of the collection this object exists in.
-	 */
-	protected constructor(collection: string) {
+	public constructor(collection: string, props: T) {
 
 		this.collection = collection;
-		SiDatabase.neon.log(`SiObject created for '${collection}' collection.`);
-		this.props = {} as SiObjectUserProperties<T>;
+		this.props = props;
+		this._updatedAt = Date.now();
+		this._createdAt = Date.now();
 
 	}
 
-	/**
-	 * Decode the id from Mongo.
-	 * @param value The id object.
-	 */
-	private decodeId(value: { id: Buffer }): void {
-
-		if (typeof value !== "object") throw new Error("Id object is not a valid object.");
-		const idData: Buffer = value["id"];
-		this.id = idData.toString("hex");
-
-	}
-
-	/**
-	 * Get the database collection object for this object's collection.
-	 */
-	private getDatabaseCollection(): MongoDB.Collection {
+	private getDatabaseCollection(): Mongo.Collection {
 
 		return SiDatabase.getSession().getDatabase().collection(this.collection);
 
 	}
 
-	/**
-	 * Get the database collection but first check that the object has an id set.
-	 */
-	private getCollectionForModification(): MongoDB.Collection {
+	public getCollection(): string {
 
-		if (this.id === undefined) throw new Error(`The ${this.collection} you are trying to operate on has not been created in the database yet. Please call 'create()'.`);
-
-		return this.getDatabaseCollection();
+		return this.collection;
 
 	}
 
-	/**
-	 * Get the mongo id object for this object.
-	 */
-	private getMongoId(): MongoDB.ObjectId {
+	public getId(): Mongo.ObjectId | undefined {
 
-		return new MongoDB.ObjectId(this.id);
+		return this._id;
 
 	}
 
-	/**
-	 * Convert this object into JSON.
-	 */
-	protected encode(): SiObjectProperties<T> {
-
-		SiDatabase.neon.log( `SiObject will encode.`);
-		this.objectWillEncode();
-
-		const obj: SiObjectProperties<T> = this.props as SiObjectProperties<T>;
-
-		obj.updatedAt = this.updatedAt;
-		obj.createdAt = this.createdAt;
-
-		SiDatabase.neon.log(`SiObject did encode.`);
-		this.objectDidEncode();
-
-		return obj;
-
-	}
-
-	/**
-	 * Will be called before an object's encode() method is called.
-	 */
-	protected objectWillEncode(): void {}
-
-	/**
-	 * Will be called after an object's encode() method is called.
-	 */
-	protected objectDidEncode(): void {}
-
-	/**
-	 * Will be called before an object's decode() method is called.
-	 */
-	protected objectWillDecode(): void {}
-
-	/**
-	 * Will be called after an object's decode() method is called.
-	 */
-	protected objectDidDecode(): void {}
-
-	/**
-	 * Will be called before an object's update() method is called.
-	 */
-	protected objectWillUpdate(): void {}
-
-	/**
-	 * Will be called after an object's update() method is called.
-	 */
-	protected objectDidUpdate(): void {}
-
-	/**
-	 * Will be called before an object's create() method is called.
-	 */
-	protected objectWillCreate(): void {}
-
-	/**
-	 * Will be called after an object's create() method is called.
-	 */
-	protected objectDidCreate(): void {}
-
-	/**
-	 * Will be called before an object's delete() method is called.
-	 */
-	protected objectWillDelete(): void {}
-
-	/**
-	 * Will be called after an object's delete() method is called.
-	 */
-	protected objectDidDelete(): void {}
-
-	/**
-	 * Will be called before an object's fetch() method is called.
-	 */
-	protected objectWillFetch(): void {}
-
-	/**
-	 * Will be called after an object's fetch() method is called.
-	 */
-	protected objectDidFetch(): void {}
-
-	/**
-	 * Change this object's reference id.
-	 * @param id The new id for this object.
-	 */
-	protected setId(id: string): void { this.id = id; }
-
-	/**
-	 * Get a value from this object's props.
-	 * @param prop The name of the prop.
-	 */
-	public get<K extends keyof T>(prop: K): T[K] | undefined {
-
-		return this.props[prop];
-
-	}
-
-	/**
-	 * Get a value from this object's props and check it is defined.
-	 * @param prop The name of the prop.
-	 */
-	public getUnsafe<K extends keyof T>(prop: K): T[K] {
-
-		const value: T[K] | undefined = this.props[prop];
-		if (value === undefined) throw new Error(`The value for key '${prop}' is undefined.`);
-
-		return value;
-
-	}
-
-	/**
-	 * Set an object's prop.
-	 * @param prop The prop name.
-	 * @param value The new value for the prop.
-	 */
-	public set<K extends keyof T>(prop: K, value: T[K]): void {
-
-		this.props[prop] = value;
-
-	}
-
-	/**
-	 * Print this object.
-	 */
-	public print(): void {
-		console.log(this.getJSON());
-	}
-
-	/**
-	 * Get the collection name of this object.
-	 */
-	public getCollection(): string { return this.collection; }
-
-	/**
-	 * Get the id of this object and check it is defined.
-	 */
-	public getId(): string {
-
-		if (this.id === undefined) throw new Error("This object's 'id' is undefined. You must first call fetch or create.");
-		return this.id;
-	}
-
-	/**
-	 * Get the timestamp this object was created at and check it is defined.
-	 */
-	public getCreatedAt(): number {
-
-		if (this.createdAt === undefined) throw new Error("This object's 'createdAt' is undefined. You must first call fetch or create.");
-		return this.createdAt;
-
-	}
-
-	/**
-	 * Get the timestamp this object was updated at last and check it is defined.
-	 */
 	public getUpdatedAt(): number {
 
-		if (this.updatedAt === undefined) throw new Error("This object's 'updatedAt' is undefined. You must first call fetch or create.");
-		return this.updatedAt;
+		return this._updatedAt;
 
 	}
 
-	/**
-	 * Whether or not this object exists in the database.
-	 */
+	public getCreatedAt(): number {
+
+		return this._createdAt;
+
+	}
+
 	public exists(): boolean {
 
-		return this.id !== undefined;
+		return this._id !== undefined;
 
 	}
 
-	/**
-	 * Get the id of this object in the database.
-	 */
-	public getIdNullable(): string | undefined { return this.id; }
+	public toJSON<K extends keyof T>(...keys: K[]): {
+		[P in K]: T[P];
+	} & SiObjectBaseProperties {
 
-	/**
-	 * Get the timestamp this object was updated at last.
-	 */
-	public getUpdatedAtNullable(): number | undefined { return this.updatedAt; }
+		const map: T = {} as T;
+		for (const key of keys) map[key] = this.props[key];
 
-	/**
-	 * Get the timestamp that this object was created at.
-	 */
-	public getCreatedAtNullable(): number | undefined { return this.createdAt; }
-
-	/**
-	 * Get the JSON of this object for specific keys including built in ones.
-	 * If you supply no keys, all will be provided.
-	 * @param keys The keys to include, if none provided, all will be added.
-	 */
-	public getJSON(...keys: (keyof T)[]): SiObjectProperties<T> {
-
-		const encodedData: SiObjectProperties<T> = this.encode();
-		let filteredData: SiObjectProperties<T> = {};
-
-		if (keys.length === 0) filteredData = encodedData;
-		else for (const key of keys) filteredData[key] = encodedData[key];
-
-		filteredData.id = this.id;
-		filteredData.updatedAt = this.updatedAt;
-		filteredData.createdAt = this.createdAt;
-
-		return filteredData;
+		return {id: this._id?.toHexString(), updatedAt: this._updatedAt, createdAt: this._createdAt, ...map};
 
 	}
 
-	/**
-	 * Decode an object onto this object.
-	 * @param obj An object from Mongo.
-	 */
-	public decode(obj: object): void {
+	public put<K extends keyof T, V extends T[K]>(key: K, value: V): void {
 
-		SiDatabase.neon.log(`SiObject will decode.`);
-		this.objectWillDecode();
+		this._updatedAt = Date.now();
+		this.props[key] = value;
 
-		const properties: SiObjectProperties<T> = obj as SiObjectProperties<T>;
+	}
 
-		// This set the id to the underlying id from mongo.
-		// @ts-ignore
-		this.decodeId(properties["_id"]);
+	public set(props: Pick<T, keyof T>): void {
 
-		this.updatedAt = properties.updatedAt;
-		this.createdAt = properties.createdAt;
+		this._updatedAt = Date.now();
+		for (const key in props) this.props[key] = props[key];
 
-		// delete properties.id;
-		delete properties.updatedAt;
-		delete properties.createdAt;
+	}
 
-		// This just removes the underlying _id provided by Mongo from props.
-		// @ts-ignore
-		delete properties["_id"];
+	public get<K extends keyof T>(key: K): T[K] {
 
-		this.props = properties as SiObjectUserProperties<T>;
+		return this.props[key];
 
-		const keys: string[] = Object.keys(properties);
-		for (const key of keys) {
-			// @ts-ignore
-			const value: any = properties[key];
-			if (typeof value === "object") {
+	}
 
-				if (value["_bsontype"] === "Binary") {
-					// @ts-ignore
-					properties[key] = Buffer.from(value["buffer"]);
-				}
+	public async delete(): Promise<void> {
 
-			}
+		if (!this.exists()) throw new Error("SiObject does not contain an id. First call create().");
+		await this.getDatabaseCollection().deleteOne({_id: this.getId()});
+
+	}
+
+	public async save(): Promise<void> {
+
+		const values = {...this.props, updatedAt: this._updatedAt, createdAt: this._createdAt};
+
+		if (this._id === undefined) {
+			this._id = (await this.getDatabaseCollection().insertOne(values)).insertedId;
+		} else {
+			await this.getDatabaseCollection().updateOne({_id: this._id}, {$set: values});
 		}
 
-		SiDatabase.neon.log(`SiObject did decode.`);
-		this.objectDidDecode();
+	}
+
+	public async update(props: Pick<T, keyof T>): Promise<void> {
+
+		if (!this.exists()) throw new Error("SiObject does not contain an id. First call create().");
+		this.set(props);
+		const updateValue = {...props, updatedAt: this._updatedAt};
+		await this.getDatabaseCollection().updateOne({_id: this.getId()}, {$set: updateValue});
+
 
 	}
 
-	/**
-	 * Create this object in the database.
-	 */
-	public async create(): Promise<void> {
+	public async refresh(): Promise<void> {
 
-		SiDatabase.neon.log( `SiObject will save.`);
-		this.objectWillCreate();
+		if (this._id === undefined) throw new Error("SiObject does not contain an id. First call create().");
+		const props = (await this.getDatabaseCollection().findOne({_id: this._id}));
+		if (props === undefined) throw new Error(`Could not find props for SiObject with id: ${this._id.toHexString()}.`);
 
-		const collection: MongoDB.Collection = this.getDatabaseCollection();
+		this._updatedAt = props.updatedAt || Date.now();
+		this._createdAt = props.createdAt || Date.now();
 
-		if (this.id !== undefined) throw new Error("You cannot create an object that already has an id.");
+		delete props.id;
+		delete props.updatedAt;
+		delete props.createdAt;
 
-		this.createdAt = Date.now();
-		this.updatedAt = Date.now();
-
-		const obj: SiObjectProperties<T> = this.encode();
-		const res: MongoDB.InsertOneWriteOpResult<any> = await collection.insertOne(obj);
-
-		this.decodeId(res.insertedId);
-
-		SiDatabase.neon.log( `SiObject did save.`);
-		this.objectDidCreate();
+		this.props = props as T;
 
 	}
-
-	/**
-	 * Update this object in the database. If no keys are provided, all will be updated.
-	 * @param keys The keys to update.
-	 */
-	public async update(...keys: SiObjectPropertyKeys<T>[]): Promise<void> {
-
-		SiDatabase.neon.log( `SiObject will update.`);
-		this.objectWillUpdate();
-
-		const collection: MongoDB.Collection = this.getCollectionForModification();
-
-		this.updatedAt = Date.now();
-
-		const encodedData: object = this.encode();
-		let valuesToSet: object = {};
-		if (keys.length === 0) valuesToSet = encodedData;
-		else {
-			for (const key of keys) {
-				// The below line is ignoring types only to make the type easier, it will not actually cause problems
-				// as the types have already been validated and the props object is private.
-				// @ts-ignore
-				valuesToSet[key] = encodedData[key];
-			}
-		}
-
-		// Again, this is still type-safe as it is already checked.
-		// Just saving the updatedAt to no matter what (if user doesnt supply in keys) it will be updated.
-		// @ts-ignore
-		valuesToSet["updatedAt"] = this.updatedAt;
-
-		const newValues: object = {$set: valuesToSet};
-		await collection.updateOne({_id: this.getMongoId()}, newValues);
-
-		SiDatabase.neon.log( `SiObject did update.`);
-		this.objectDidUpdate();
-
-	}
-
-	/**
-	 * Fetch this object from the database and overwrite local values.
-	 * @param id Supplying an id will pull in the object that the id corresponds to.
-	 */
-	public async fetch(id?: string): Promise<void> {
-
-		SiDatabase.neon.log( `SiObject will fetch.`);
-		this.objectWillFetch();
-
-		if (id) this.id = id;
-
-		const collection: MongoDB.Collection = this.getCollectionForModification();
-		const res: object | null = await collection.findOne({_id: this.getMongoId()});
-		if (res == null) throw new Error(`Could not find a ${this.collection} for id '${this.id}'.`);
-
-		this.decode(res);
-
-		SiDatabase.neon.log( `SiObject did fetch.`);
-		this.objectDidFetch();
-
-	}
-
-	/**
-	 * Delete this object from the database.
-	 * @param id The id of this object or any object.
-	 */
-	public async delete(id?: string): Promise<void> {
-
-		SiDatabase.neon.log( `SiObject will delete.`);
-		this.objectWillDelete();
-
-		if (id) this.id = id;
-
-		const collection: MongoDB.Collection = this.getCollectionForModification();
-		await collection.deleteOne({_id: this.getMongoId()});
-
-		SiDatabase.neon.log( `SiObject did delete.`);
-		this.objectDidDelete();
-
-	}
-
 
 }
+
+interface UserProps {
+	firstName: string;
+	age?: number | undefined;
+}
+
+const user: SiObject<UserProps> = new SiObject<UserProps>("oij", {
+	firstName: "Elijah"
+});
