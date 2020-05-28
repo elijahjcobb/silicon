@@ -8,8 +8,6 @@
 import {SiObject, SiDatabase, SiObjectBaseProperties, SiObjectProps} from "./index";
 import * as MongoDB from "mongodb";
 
-export type SiObjectFactory<T, P> = { new<P>(): T };
-
 type SiQueryConstructAllowedKey = "$lt" | "$gt" | "$lte" | "$gte" | "$ne" | "$in" | "$nin";
 type SiQueryConstructAllowedBaseValue = string | number | boolean | MongoDB.ObjectID;
 type SiQueryConstructAllowedValue<P extends object> = SiQueryConstructAllowedBaseValue | {
