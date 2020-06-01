@@ -7,7 +7,6 @@
 
 import * as Mongo from "mongodb";
 import {SiObject} from "./SiObject";
-import {SiCodable} from "./SiCodable";
 import {SiDatabase} from "./SiDatabase";
 
 export interface SiPointerProps {
@@ -16,7 +15,7 @@ export interface SiPointerProps {
 	$db: string;
 }
 
-export class SiPointer<T extends SiObject<any>> implements SiCodable<SiPointerProps> {
+export class SiPointer<T extends SiObject<any>> {
 
 	private _collection?: string;
 	private _id?: Mongo.ObjectId;
@@ -29,12 +28,12 @@ export class SiPointer<T extends SiObject<any>> implements SiCodable<SiPointerPr
 
 	}
 
-	public encode(value: SiPointerProps) {
+	public decode(value: SiPointerProps) {
 		this._id = value.$id;
 		this._collection = value.$ref;
 	}
 
-	public decode(): SiPointerProps {
+	public encode(): SiPointerProps {
 
 		if (this._id === undefined || this._collection === undefined) throw new Error("Id of collection undefined.");
 

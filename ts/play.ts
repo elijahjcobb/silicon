@@ -6,52 +6,70 @@
  */
 
 import {SiDatabase, SiObject, SiObjectProps} from "./index";
-import {SiPointer} from "./SiPointer";
-import {SiCodable} from "./SiCodable";
+import * as Mongo from "mongodb";
+
+// interface UserProps extends SiObjectProps<UserProps> {
+// 	name: string;
+// 	age: number;
+// 	test: Tester;
+// }
+//
+// class User extends SiObject<UserProps> {
+//
+// 	public constructor(name: string, age: number) {
+// 		super("user", {name, age, test: new Tester()}, {
+// 			test: Tester
+// 		});
+// 	}
+//
+// }
+//
+// class Tester implements SiCodable<string> {
+//
+// 	public x: string = "Hello, world!";
+//
+// 	public decode(): string {
+// 		return this.x;
+// 	}
+//
+// 	public encode(value: string): void {
+// 		this.x = value;
+// 	}
+//
+// }
+//
+// interface StoryProps extends SiObjectProps<StoryProps> {
+// 	title: string;
+// 	content?: string | undefined;
+// 	user: SiPointer<SiObject<UserProps>>;
+// }
+//
+// class Story extends SiObject<StoryProps> {
+//
+// 	public constructor(title: string, user: SiObject<UserProps>) {
+//
+// 		super("story", {title, user: SiPointer.to(user)}, {
+// 			user: SiPointer
+// 		});
+//
+// 	}
+//
+// }
 
 interface UserProps extends SiObjectProps<UserProps> {
 	name: string;
 	age: number;
-	test: Tester;
+	isAdmin: boolean;
+	password: Buffer;
 }
+
+
 
 class User extends SiObject<UserProps> {
 
-	public constructor(name: string, age: number) {
-		super("user", {name, age, test: new Tester()}, {
-			test: Tester
-		});
-	}
+	public constructor(props: UserProps) {
 
-}
-
-class Tester implements SiCodable<string> {
-
-	public x: string = "Hello, world!";
-
-	public decode(): string {
-		return this.x;
-	}
-
-	public encode(value: string): void {
-		this.x = value;
-	}
-
-}
-
-interface StoryProps extends SiObjectProps<StoryProps> {
-	title: string;
-	content?: string | undefined;
-	user: SiPointer<SiObject<UserProps>>;
-}
-
-class Story extends SiObject<StoryProps> {
-
-	public constructor(title: string, user: SiObject<UserProps>) {
-
-		super("story", {title, user: SiPointer.to(user)}, {
-			user: SiPointer
-		});
+		super("user", props);
 
 	}
 
@@ -59,13 +77,28 @@ class Story extends SiObject<StoryProps> {
 
 (async (): Promise<void> => {
 
-	// await SiDatabase.init({address: "mongodb://localhost:27017", database: "silicon", debug: false});
-	const user = new User("Elijah", 12);
+	await SiDatabase.init({address: "mongodb://localhost:27017", database: "silicon", debug: true});
 
-	user.put("test", new Tester());
+	// const user = new User({
+	// 	name: "Elijah",
+	// 	age: 21,
+	// 	isAdmin: true,
+	// 	password: Buffer.from("Hello, world!", "utf8")
+	// });
+	//
+	// await user.save();
 
-	const story = new Story("Hello, world!", user);
+	const res = await SiDatabase.getSession().getDatabase().collection("user").findOne({_id: new Mongo.ObjectId("5ed174035318204dd33a8073")});
 
-	story.put("user", SiPointer.to(user));
+	const user = new User({
+		name: "Elijah",
+		age: 21,
+		isAdmin: true,
+		password: Buffer.from("few")
+	});
+
+	user.decode(res);
+
+	console.log(user.get("password"));
 
 })().then((): void => SiDatabase.close()).catch((err: any): void => console.error(err));

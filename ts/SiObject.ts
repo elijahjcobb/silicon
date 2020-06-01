@@ -7,22 +7,11 @@
 
 import * as Mongo from "mongodb";
 import {SiDatabase} from "./SiDatabase";
-import {SiPointerProps} from "./SiPointer";
-import {isCodable, SiCodable} from "./SiCodable";
+import {SiPointer, SiPointerProps} from "./SiPointer";
 
-// export type SiExtractProps<P> = P extends SiObject<infer T> ? T : never;
-export type SiObjectBasePropValue = string | number | boolean | Buffer | SiPointerProps;
-export type SiObjectPropValue = SiObjectBasePropValue | SiCodable<any>;
+export type SiObjectPropValue = string | number | boolean | Buffer | object | SiPointer<any>;
 export type SiObjectProps<T extends object = {}> = { [key in keyof T]: SiObjectPropValue; };
-export type SiObjectBaseProperties = { id: string | undefined, updatedAt: number, createdAt: number };
-type SiFactory<T> = { new(): T; };
-type SiObjectFactoryCodableProperties<T extends SiObjectProps<T>> = {
-	[K in keyof T]: T[K] extends SiCodable<any> ? K : never;
-}[keyof T];
-type SiObjectFactory<T extends SiObjectProps<T>> = {
-	[K in keyof Pick<T, SiObjectFactoryCodableProperties<T>>]: SiFactory<SiCodable<any>>;
-};
-type SiObjectEncodedProps<T extends SiObjectProps> = { [K in keyof T]: SiObjectBasePropValue; };
+export type SiObjectBaseProperties = { _id: string | undefined, updatedAt: number, createdAt: number };
 
 export class SiObject<T extends SiObjectProps<T>> {
 
@@ -30,16 +19,14 @@ export class SiObject<T extends SiObjectProps<T>> {
 	private _updatedAt: number;
 	private _createdAt: number;
 	private _props: T;
-	private readonly _factory: SiObjectFactory<T>;
 	private readonly _collection: string;
 
-	public constructor(collection: string, props: T, factory: SiObjectFactory<T>) {
+	public constructor(collection: string, props: T) {
 
 		this._collection = collection;
 		this._props = props;
 		this._updatedAt = Date.now();
 		this._createdAt = Date.now();
-		this._factory = factory;
 
 	}
 
@@ -86,7 +73,7 @@ export class SiObject<T extends SiObjectProps<T>> {
 		const map: T = {} as T;
 		for (const key of keys) map[key] = this._props[key];
 
-		return {id: this._id?.toHexString(), updatedAt: this._updatedAt, createdAt: this._createdAt, ...map};
+		return {_id: this._id?.toHexString(), updatedAt: this._updatedAt, createdAt: this._createdAt, ...map};
 
 	}
 
@@ -119,7 +106,10 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	public async save(): Promise<void> {
 
-		const values = {...this._props, updatedAt: this._updatedAt, createdAt: this._createdAt};
+		const values = this.encode();
+
+		SiDatabase.neon.log(this._id);
+		SiDatabase.neon.log(values);
 
 		if (this._id === undefined) {
 			this._id = (await this.getDatabaseCollection().insertOne(values)).insertedId;
@@ -129,57 +119,84 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	}
 
-	public decode(props: T & SiObjectBaseProperties): void {
+	public decode(props: SiObjectBaseProperties & T): void {
 
-		this._id = props.id ? new Mongo.ObjectId(props.id) : undefined;
+		console.log(props);
+
+		this._id = new Mongo.ObjectId(props._id);
 		this._updatedAt = props.updatedAt;
 		this._createdAt = props.createdAt;
 
-		const newProps = {};
+		delete props._id;
+		delete props.updatedAt;
+		delete props.createdAt;
 
-		for (const key in props) {
-			if (key === "id" || key === "updatedAt" || key === "createdAt") continue;
-			const value = props[key];
-			if (this._factory.hasOwnProperty(key)) {
-				const factory = this._factory[key];
-				newProps[key] = (new factory()).decode(value);
-			}
+		for (const k in props) {
+			// @ts-ignore
+			const v = props[k];
+			if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+				// @ts-ignore
+				this._props[k] = v;
+			} else if (typeof v === "object") {
 
+				if (v.hasOwnProperty("_bsontype")) {
+					if (v["_bsontype"] === "Binary" && v.hasOwnProperty("buffer")) {
+						const data = v["buffer"];
+						if (Buffer.isBuffer(data)) {
+							//@ts-ignore
+							this._props[k] = v["buffer"];
+						}
+					}
+				}
+
+			} else SiDatabase.neon.err(`Received prop value that is not allowed. Type = ${typeof v}, Value = ${v}`);
 		}
 
 	}
 
-	public encodeProps(): SiObjectEncodedProps<T> {
+	public encodeProps(): object {
 
-		const encodedProps: Partial<SiObjectEncodedProps<T>> = {};
+		const newProps: Partial<T> = {};
 
 		for (const key in this._props) {
 			const value = this._props[key];
-			if (isCodable(value)) encodedProps[key] = value.encode();
-			else if (value !== undefined) {
-				// @ts-ignore
-				encodedProps[key] = value;
-			}
+			if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+				newProps[key] = value;
+			} else if (typeof value === "object") {
+				if (value instanceof SiPointer) {
+					// @ts-ignore
+					newProps[key] = value.encode();
+				} else {
+					newProps[key] = value;
+				}
+			} else SiDatabase.neon.err(`Received prop value that is not allowed. Type = ${typeof value}, Value = ${value}`);
 		}
 
-		return encodedProps as SiObjectEncodedProps<T>;
+
+		return newProps;
 
 	}
 
-	public encode(): SiObjectEncodedProps<T> & SiObjectBaseProperties {
-		return {
+	public encode(): object {
+
+		const obj = {
 			...this.encodeProps(),
-			id: this._id?.toHexString(),
 			updatedAt: this._updatedAt,
-			createdAt: this._createdAt
+			createdAt: this._createdAt,
+			id: this._id?.toHexString()
 		};
+
+		if (this._id === undefined) delete obj.id;
+
+		return obj;
+
 	}
 
 	public async update(props: Pick<T, keyof T>): Promise<void> {
 
 		if (!this.exists()) throw new Error("SiObject does not contain an id. First call create().");
 		this.set(props);
-		const updateValue = {...this._props, updatedAt: this._updatedAt};
+		const updateValue = {...this.encodeProps(), updatedAt: this._updatedAt};
 		await this.getDatabaseCollection().updateOne({_id: this.getId()}, {$set: updateValue});
 
 
