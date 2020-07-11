@@ -5,6 +5,3 @@
  * github.com/elijahjcobb
  */
 
-export * from "./SiObject";
-export * from "./SiDatabase";
-export * from "./SiQuery";
