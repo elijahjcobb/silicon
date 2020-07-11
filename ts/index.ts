@@ -5,3 +5,6 @@
  * github.com/elijahjcobb
  */
 
+export * from "./SiObject";
+export * from "./SiQuery";
+export * from "./SiPointer";
