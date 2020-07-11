@@ -63,8 +63,6 @@ interface UserProps extends SiObjectProps<UserProps> {
 	password: Buffer;
 }
 
-
-
 class User extends SiObject<UserProps> {
 
 	public constructor(props: UserProps) {
