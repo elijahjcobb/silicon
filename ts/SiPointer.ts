@@ -17,13 +17,13 @@ export interface SiPointerProps {
 
 export class SiPointer<T extends SiObject<any>> {
 
-	private _collection?: string;
+	private _collection: string;
 	private _id?: Mongo.ObjectId;
 
-	public constructor(instance?: T) {
+	public constructor(instance: T) {
 
-		const id = instance?.getId();
-		this._collection = instance?.getCollection();
+		const id = instance.getId();
+		this._collection = instance.getCollection();
 		this._id = id;
 
 	}
@@ -35,7 +35,7 @@ export class SiPointer<T extends SiObject<any>> {
 
 	public encode(): SiPointerProps {
 
-		if (this._id === undefined || this._collection === undefined) throw new Error("Id of collection undefined.");
+		if (this._id === undefined) throw new Error("Id of collection undefined.");
 
 		return {
 			$id: this._id,
@@ -51,7 +51,7 @@ export class SiPointer<T extends SiObject<any>> {
 
 	}
 
-	public static to<T extends SiObject<any>>(instance?: T): SiPointer<T> {
+	public static to<T extends SiObject<any>>(instance: T): SiPointer<T> {
 
 		return new SiPointer<T>(instance);
 

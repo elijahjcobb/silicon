@@ -9,22 +9,34 @@ import * as Mongo from "mongodb";
 import {SiDatabase} from "./SiDatabase";
 import {SiPointer, SiPointerProps} from "./SiPointer";
 
-export type SiObjectPropValue = string | number | boolean | Buffer | object | SiPointer<any>;
+export type SiObjectPropValue = string | number | boolean | Buffer | Mongo.ObjectId | object; // | SiPointer<any>;
 export type SiObjectProps<T extends object = {}> = { [key in keyof T]: SiObjectPropValue; };
 export type SiObjectBaseProperties = { _id: string | undefined, updatedAt: number, createdAt: number };
+
+export enum SiValue {
+	String,
+	Number,
+	Boolean,
+	Buffer,
+	Object,
+	Id
+}
+export type SiSchema<T extends object> = { [key in keyof T]: SiValue | {type: SiValue, required?: boolean, unique?: boolean}};
 
 export class SiObject<T extends SiObjectProps<T>> {
 
 	private _id: Mongo.ObjectId | undefined;
 	private _updatedAt: number;
 	private _createdAt: number;
-	private _props: T;
+	private readonly _props: T;
+	private readonly _schema: SiSchema<T>;
 	private readonly _collection: string;
 
-	public constructor(collection: string, props: T) {
+	public constructor(collection: string, schema: SiSchema<T>, props: T) {
 
 		this._collection = collection;
 		this._props = props;
+		this._schema = schema;
 		this._updatedAt = Date.now();
 		this._createdAt = Date.now();
 
@@ -108,9 +120,6 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 		const values = this.encode();
 
-		SiDatabase.neon.log(this._id);
-		SiDatabase.neon.log(values);
-
 		if (this._id === undefined) {
 			this._id = (await this.getDatabaseCollection().insertOne(values)).insertedId;
 		} else {
@@ -128,8 +137,8 @@ export class SiObject<T extends SiObjectProps<T>> {
 		this._createdAt = props.createdAt;
 
 		delete props._id;
-		delete props.updatedAt;
-		delete props.createdAt;
+		props.updatedAt = -1;
+		props.createdAt = -1;
 
 		for (const k in props) {
 			// @ts-ignore
@@ -154,13 +163,35 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	}
 
+	private getSchemaKey(key: keyof T): {type: SiValue, required: boolean, unique: boolean} {
+		return {};
+	}
+
 	public encodeProps(): object {
 
 		const newProps: Partial<T> = {};
 
 		for (const key in this._props) {
 			const value = this._props[key];
-			if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+			const schema = this.getSchemaKey(key);
+
+			switch (schema.type) {
+				case SiValue.String:
+				case SiValue.Number:
+				case SiValue.Boolean:
+				case SiValue.Buffer:
+				case SiValue.Object:
+				case SiValue.Id:
+				default:
+
+			}
+
+			if (typeof value === "string") {
+				if (schema.type !== SiValue.String)
+				newProps[key] = value;
+			} else if (typeof value === "number") {
+				newProps[key] = value;
+			} else if (typeof value === "boolean") {
 				newProps[key] = value;
 			} else if (typeof value === "object") {
 				if (value instanceof SiPointer) {
