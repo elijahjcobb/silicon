@@ -29,14 +29,14 @@ export class SiObject<T extends SiObjectProps<T>> {
 	private _updatedAt: number;
 	private _createdAt: number;
 	private readonly _props: T;
-	private readonly _schema: SiSchema<T>;
+	// private readonly _schema: SiSchema<T>;
 	private readonly _collection: string;
 
-	public constructor(collection: string, schema: SiSchema<T>, props: T) {
+	public constructor(collection: string, props: T) {
 
 		this._collection = collection;
 		this._props = props;
-		this._schema = schema;
+		// this._schema = {};
 		this._updatedAt = Date.now();
 		this._createdAt = Date.now();
 
@@ -48,6 +48,17 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	}
 
+	// private getSchemaKey(key: keyof T): {type: SiValue, required: boolean, unique: boolean} {
+	// 	const schema = this._schema[key];
+	// 	if (Object.keys(schema).includes("required")) {
+	// 		//@ts-ignore
+	// 		return {type: schema.type, unique: schema.unique, required: schema.unique};
+	// 	} else {
+	// 		//@ts-ignore
+	// 		return {type: schema.type, unique: false, required: false};
+	// 	}
+	// }
+
 	public getCollection(): string {
 
 		return this._collection;
@@ -58,6 +69,12 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 		return this._id;
 
+	}
+
+	public getHexId(): string {
+		const id = this.getId();
+		if (!id) throw new Error("This object does not have an id yet.");
+		return id.toHexString();
 	}
 
 	public getUpdatedAt(): number {
@@ -118,7 +135,7 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	public async save(): Promise<void> {
 
-		const values = this.encode();
+		const values = await this.encode();
 
 		if (this._id === undefined) {
 			this._id = (await this.getDatabaseCollection().insertOne(values)).insertedId;
@@ -130,15 +147,13 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	public decode(props: SiObjectBaseProperties & T): void {
 
-		console.log(props);
-
 		this._id = new Mongo.ObjectId(props._id);
 		this._updatedAt = props.updatedAt;
 		this._createdAt = props.createdAt;
 
 		delete props._id;
-		props.updatedAt = -1;
-		props.createdAt = -1;
+		delete props.updatedAt;
+		delete props.createdAt;
 
 		for (const k in props) {
 			// @ts-ignore
@@ -163,44 +178,25 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	}
 
-	private getSchemaKey(key: keyof T): {type: SiValue, required: boolean, unique: boolean} {
-		return {};
-	}
-
-	public encodeProps(): object {
+	public async encodeProps(): Promise<object> {
 
 		const newProps: Partial<T> = {};
 
 		for (const key in this._props) {
 			const value = this._props[key];
-			const schema = this.getSchemaKey(key);
+			// const schema = this.getSchemaKey(key);
+			// if (value === undefined && schema.required) throw new Error(`Key '${key}' was undefined but the schema required a value.`);
 
-			switch (schema.type) {
-				case SiValue.String:
-				case SiValue.Number:
-				case SiValue.Boolean:
-				case SiValue.Buffer:
-				case SiValue.Object:
-				case SiValue.Id:
-				default:
+			// if (schema.unique) {
+			// 	const query = {};
+			// 	// @ts-ignore
+			// 	query[key] = value;
+			// 	const count = await this.getDatabaseCollection().countDocuments(query);
+			// 	if (count > 0) throw new Error(`Unique key '${key}' already has duplicate value '${value}' ${count} times.`);
+			//
+			// }
 
-			}
-
-			if (typeof value === "string") {
-				if (schema.type !== SiValue.String)
-				newProps[key] = value;
-			} else if (typeof value === "number") {
-				newProps[key] = value;
-			} else if (typeof value === "boolean") {
-				newProps[key] = value;
-			} else if (typeof value === "object") {
-				if (value instanceof SiPointer) {
-					// @ts-ignore
-					newProps[key] = value.encode();
-				} else {
-					newProps[key] = value;
-				}
-			} else SiDatabase.neon.err(`Received prop value that is not allowed. Type = ${typeof value}, Value = ${value}`);
+			newProps[key] = value;
 		}
 
 
@@ -208,10 +204,11 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	}
 
-	public encode(): object {
+	public async encode(): Promise<object> {
 
+		const props = await this.encodeProps();
 		const obj = {
-			...this.encodeProps(),
+			...props,
 			updatedAt: this._updatedAt,
 			createdAt: this._createdAt,
 			id: this._id?.toHexString()
@@ -227,7 +224,8 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 		if (!this.exists()) throw new Error("SiObject does not contain an id. First call create().");
 		this.set(props);
-		const updateValue = {...this.encodeProps(), updatedAt: this._updatedAt};
+
+		const updateValue = {...(await this.encodeProps()), updatedAt: this._updatedAt};
 		await this.getDatabaseCollection().updateOne({_id: this.getId()}, {$set: updateValue});
 
 
