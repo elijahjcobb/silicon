@@ -22,7 +22,7 @@ export class SiPointer<T extends SiObject<any>> {
 
 	public constructor(instance: T) {
 
-		const id = instance.getId();
+		const id = instance.getMongoId();
 		this._collection = instance.getCollection();
 		this._id = id;
 
@@ -46,6 +46,7 @@ export class SiPointer<T extends SiObject<any>> {
 	}
 
 	public async fetch(): Promise<T | undefined> {
+
 
 		return undefined;
 

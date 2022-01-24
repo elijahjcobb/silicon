@@ -7,7 +7,6 @@
 
 import * as Mongo from "mongodb";
 import {SiDatabase} from "./SiDatabase";
-import {SiPointer, SiPointerProps} from "./SiPointer";
 
 export type SiObjectPropValue = string | number | boolean | Buffer | Mongo.ObjectId | object; // | SiPointer<any>;
 export type SiObjectProps<T extends object = {}> = { [key in keyof T]: SiObjectPropValue; };
@@ -19,8 +18,9 @@ export enum SiValue {
 	Boolean,
 	Buffer,
 	Object,
-	Id
+	Pointer
 }
+
 export type SiSchema<T extends object> = { [key in keyof T]: SiValue | {type: SiValue, required?: boolean, unique?: boolean}};
 
 export class SiObject<T extends SiObjectProps<T>> {
@@ -29,14 +29,14 @@ export class SiObject<T extends SiObjectProps<T>> {
 	private _updatedAt: number;
 	private _createdAt: number;
 	private readonly _props: T;
-	// private readonly _schema: SiSchema<T>;
+	private readonly _schema: SiSchema<T>;
 	private readonly _collection: string;
 
-	public constructor(collection: string, props: T) {
+	public constructor(collection: string, schema: SiSchema<T>, props: T) {
 
 		this._collection = collection;
 		this._props = props;
-		// this._schema = {};
+		this._schema = schema;
 		this._updatedAt = Date.now();
 		this._createdAt = Date.now();
 
@@ -48,16 +48,16 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	}
 
-	// private getSchemaKey(key: keyof T): {type: SiValue, required: boolean, unique: boolean} {
-	// 	const schema = this._schema[key];
-	// 	if (Object.keys(schema).includes("required")) {
-	// 		//@ts-ignore
-	// 		return {type: schema.type, unique: schema.unique, required: schema.unique};
-	// 	} else {
-	// 		//@ts-ignore
-	// 		return {type: schema.type, unique: false, required: false};
-	// 	}
-	// }
+	private getSchemaKey(key: keyof T): {type: SiValue, required: boolean, unique: boolean} {
+		const schema = this._schema[key];
+		if (Object.keys(schema).includes("required")) {
+			//@ts-ignore
+			return {type: schema.type, unique: schema.unique, required: schema.unique};
+		} else {
+			//@ts-ignore
+			return {type: schema.type, unique: false, required: false};
+		}
+	}
 
 	public getCollection(): string {
 
@@ -65,14 +65,14 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	}
 
-	public getId(): Mongo.ObjectId | undefined {
+	public getMongoId(): Mongo.ObjectId | undefined {
 
 		return this._id;
 
 	}
 
-	public getHexId(): string {
-		const id = this.getId();
+	public getId(): string {
+		const id = this.getMongoId();
 		if (!id) throw new Error("This object does not have an id yet.");
 		return id.toHexString();
 	}
@@ -89,10 +89,12 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	}
 
-	public exists(): boolean {
+	public async exists(): Promise<boolean> {
 
-		return this._id !== undefined;
-
+		const ex = this._id !== undefined;
+		if (!ex) return false;
+		const c = await this.getDatabaseCollection().countDocuments({_id: this._id});
+		return c > 0;
 	}
 
 	public toJSON<K extends keyof T>(...keys: K[]): {
@@ -101,7 +103,6 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 		const map: T = {} as T;
 		for (const key of keys) map[key] = this._props[key];
-
 		return {_id: this._id?.toHexString(), updatedAt: this._updatedAt, createdAt: this._createdAt, ...map};
 
 	}
@@ -128,7 +129,7 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	public async delete(): Promise<void> {
 
-		if (!this.exists()) throw new Error("SiObject does not contain an id. First call create().");
+		if (!await this.exists()) throw new Error("SiObject does not contain an id. First call create().");
 		await this.getDatabaseCollection().deleteOne({_id: this.getId()});
 
 	}
@@ -184,17 +185,7 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 		for (const key in this._props) {
 			const value = this._props[key];
-			// const schema = this.getSchemaKey(key);
-			// if (value === undefined && schema.required) throw new Error(`Key '${key}' was undefined but the schema required a value.`);
-
-			// if (schema.unique) {
-			// 	const query = {};
-			// 	// @ts-ignore
-			// 	query[key] = value;
-			// 	const count = await this.getDatabaseCollection().countDocuments(query);
-			// 	if (count > 0) throw new Error(`Unique key '${key}' already has duplicate value '${value}' ${count} times.`);
-			//
-			// }
+			const scheme = this.getSchemaKey(key);
 
 			newProps[key] = value;
 		}
@@ -207,22 +198,18 @@ export class SiObject<T extends SiObjectProps<T>> {
 	public async encode(): Promise<object> {
 
 		const props = await this.encodeProps();
-		const obj = {
+		return {
 			...props,
 			updatedAt: this._updatedAt,
 			createdAt: this._createdAt,
-			id: this._id?.toHexString()
+			id: this.getId()
 		};
-
-		if (this._id === undefined) delete obj.id;
-
-		return obj;
 
 	}
 
 	public async update(props: Pick<T, keyof T>): Promise<void> {
 
-		if (!this.exists()) throw new Error("SiObject does not contain an id. First call create().");
+		if (!await this.exists()) throw new Error("SiObject does not contain an id. First call create().");
 		this.set(props);
 
 		const updateValue = {...(await this.encodeProps()), updatedAt: this._updatedAt};

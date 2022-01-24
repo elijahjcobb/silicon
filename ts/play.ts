@@ -5,7 +5,7 @@
  * github.com/elijahjcobb
  */
 
-import {SiDatabase, SiObject, SiObjectProps, SiQuery, SiSchema, SiValue} from "./index";
+import {SiDatabase, SiObject, SiObjectProps, SiQuery, SiValue} from "./index";
 
 interface UserProps extends SiObjectProps {
 	name: string;
@@ -13,11 +13,17 @@ interface UserProps extends SiObjectProps {
 	email: string;
 	isAdmin: boolean;
 	password: Buffer;
+	friend: User;
 }
 
 class User extends SiObject<UserProps> {
 	public constructor(props: UserProps) {
-		super("user", props);
+		super("user", {
+			name: SiValue.String,
+			age: SiValue.Number,
+			email: SiValue.String,
+			isAdmin
+		}, props);
 	}
 }
 
