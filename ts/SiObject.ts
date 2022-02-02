@@ -7,11 +7,16 @@
 
 import * as Mongo from "mongodb";
 import {SiDatabase} from "./SiDatabase";
-import {SiPointer, SiPointerProps} from "./SiPointer";
+// import {SiPointer, SiPointerProps} from "./SiPointer";
 
-export type SiObjectPropValue = string | number | boolean | Buffer | Mongo.ObjectId | object; // | SiPointer<any>;
+export type SiID = Mongo.ObjectId;
+export type SiObjectPropValue = string | number | boolean | Buffer | SiID | undefined | object; // | SiPointer<any>;
 export type SiObjectProps<T extends object = {}> = { [key in keyof T]: SiObjectPropValue; };
 export type SiObjectBaseProperties = { _id: string | undefined, updatedAt: number, createdAt: number };
+
+export function createSiID(id: string): SiID {
+	return new Mongo.ObjectId(id);
+}
 
 export enum SiValue {
 	String,
@@ -97,12 +102,13 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	public toJSON<K extends keyof T>(...keys: K[]): {
 		[P in K]: T[P];
-	} & SiObjectBaseProperties {
+	} & {id: string, updatedAt: number, createdAt: number} {
 
 		const map: T = {} as T;
+		if (keys.length === 0) keys = (Object.keys(this._props) as K[]);
 		for (const key of keys) map[key] = this._props[key];
 
-		return {_id: this._id?.toHexString(), updatedAt: this._updatedAt, createdAt: this._createdAt, ...map};
+		return {id: this.getHexId(), updatedAt: this._updatedAt, createdAt: this._createdAt, ...map};
 
 	}
 
@@ -158,12 +164,19 @@ export class SiObject<T extends SiObjectProps<T>> {
 		for (const k in props) {
 			// @ts-ignore
 			const v = props[k];
+
 			if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
 				// @ts-ignore
 				this._props[k] = v;
 			} else if (typeof v === "object") {
 
-				if (v.hasOwnProperty("_bsontype")) {
+				if (v.hasOwnProperty("id")) {
+					const data = v["id"] as Buffer;
+					const str = data.toString("hex");
+					const id = createSiID(str);
+					// @ts-ignore
+					this._props[k] = id;
+				} else if (v.hasOwnProperty("_bsontype")) {
 					if (v["_bsontype"] === "Binary" && v.hasOwnProperty("buffer")) {
 						const data = v["buffer"];
 						if (Buffer.isBuffer(data)) {
@@ -171,6 +184,9 @@ export class SiObject<T extends SiObjectProps<T>> {
 							this._props[k] = v["buffer"];
 						}
 					}
+				} else {
+					// @ts-ignore
+					this._props[k] = v;
 				}
 
 			} else SiDatabase.neon.err(`Received prop value that is not allowed. Type = ${typeof v}, Value = ${v}`);

@@ -13,6 +13,7 @@ type SiQueryConstructAllowedBaseValue = string | number | boolean | MongoDB.Obje
 type SiQueryConstructAllowedValue<P extends object> = SiQueryConstructAllowedBaseValue | {
 	[key in SiQueryConstructAllowedKey]?: SiQueryConstructAllowedBaseValue | string[] | number[]
 } | SiQueryConstructor<P>[];
+
 type SiQueryConstructor<P extends object> = {
 	[key in keyof P]?: SiQueryConstructAllowedValue<P>;
 } | { [key in keyof {"updatedAt": 1, "createdAt": 1, "_id": 1, "$or": 1}]?: SiQueryConstructAllowedValue<P>};
@@ -27,7 +28,7 @@ export class SiQuery<T extends SiObject<P>, P extends SiObjectProps<P>> {
 
 	private limit: number;
 	private collection: MongoDB.Collection | undefined;
-	private readonly sort: (keyof P | "$asc" | "$desc")[][];
+	private readonly sort: (keyof P | "ascending" | "descending")[][];
 
 	public constructor(factory: { new (arg: P): T }, query: SiQueryConstructor<P>) {
 
@@ -60,10 +61,29 @@ export class SiQuery<T extends SiObject<P>, P extends SiObjectProps<P>> {
 		};
 	}
 
-	public setLimit(count: number): void { this.limit = count; }
-	public addSort(key: keyof P, direction: "$asc" | "$desc"): void { this.sort.push([key, direction]); }
+	public setLimit(count: number): SiQuery<T, P> {
+		this.limit = count;
+		return this;
+	}
 
-	public async getFirst(): Promise<T | undefined> {
+	public addSort(key: keyof P, direction: "ascending" | "descending"): SiQuery<T, P> {
+		this.sort.push([key, direction]);
+		return this;
+	}
+
+	public ascending(key: keyof P): SiQuery<T, P> {
+		return this.addSort(key, "ascending");
+	}
+
+	public descending(key: keyof P): SiQuery<T, P> {
+		return this.addSort(key, "descending");
+	}
+
+	public getFirst(): Promise<T | undefined> {
+		return this.get();
+	}
+
+	public async get(): Promise<T | undefined> {
 
 		const oldLimit: number = this.limit;
 		this.limit = 1;
@@ -109,12 +129,13 @@ export class SiQuery<T extends SiObject<P>, P extends SiObjectProps<P>> {
 
 	}
 
-	// public static async getObjectForId<T extends SiObject<P>, P extends object>(factory: SiObjectFactory<T, P>, id: string): Promise<T | undefined> {
-	//
-	// 	const query: SiQuery<T, P> = new SiQuery<T, P>(factory, {_id: new MongoDB.ObjectId(id)});
-	// 	return await query.getFirst();
-	//
-	// }
+	public static async getForId<T extends SiObject<P>, P extends SiObjectProps<P>>(factory: { new (arg: P): T }, id: undefined | string | MongoDB.ObjectId): Promise<T | undefined> {
+		if (id === undefined) return undefined;
+		const realId = typeof id === "string" ? new MongoDB.ObjectId(id) : id;
+		const query = new SiQuery(factory, {_id: realId});
+		return await query.getFirst();
+
+	}
 	//
 	// public static async getAll<T extends SiObject<P>, P extends object>(factory: SiObjectFactory<T, P>, limit: number = 100): Promise<T[]> {
 	//
@@ -123,5 +144,9 @@ export class SiQuery<T extends SiObject<P>, P extends SiObjectProps<P>> {
 	// 	return await query.getAll();
 	//
 	// }
+
+	public static init<T extends SiObject<P>, P extends SiObjectProps<P>>(factory: { new (arg: P): T }, query?: SiQueryConstructor<P>): SiQuery<T, P> {
+		return new SiQuery(factory, query ?? {});
+	}
 
 }
