@@ -106,14 +106,25 @@ export class SiObject<T extends SiObjectProps<T>> {
 	}
 
 	public toJSON<K extends keyof T>(...keys: K[]): {
-		[P in K]: T[P];
+		[P in K]: T[P] extends Mongo.ObjectId ? string : T[P];
 	} & {id: string, updatedAt: number, createdAt: number} {
 
 		const map: T = {} as T;
 		if (keys.length === 0) keys = (Object.keys(this._props) as K[]);
-		for (const key of keys) map[key] = this._props[key];
+		for (const key of keys) {
+			const value = this._props[key];
+			if (typeof value === "object" && value.hasOwnProperty("id")) {
+				// @ts-ignore
+				map[key] =  value.id.toString("hex");
+			} else map[key] = value;
+		}
 
-		return {id: this.getHexId(), updatedAt: this._updatedAt, createdAt: this._createdAt, ...map};
+		const idObj = {} as {id?: string};
+		const id = this.getId();
+		if (id) idObj.id = id.toHexString();
+
+		// @ts-ignore
+		return {id: this.getId() , updatedAt: this._updatedAt, createdAt: this._createdAt, ...map, ...idObj};
 
 	}
 
@@ -232,10 +243,10 @@ export class SiObject<T extends SiObjectProps<T>> {
 			...props,
 			updatedAt: this._updatedAt,
 			createdAt: this._createdAt,
-			id: this._id?.toHexString()
+			// id: this._id?.toHexString()
 		};
 
-		if (this._id === undefined) delete obj.id;
+		// if (this._id === undefined) delete obj.id;
 
 		return obj;
 
