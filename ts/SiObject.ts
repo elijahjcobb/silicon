@@ -76,6 +76,11 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 	}
 
+	public getIdForce(): Mongo.ObjectId {
+		if (!this._id) throw new Error("This object does not have an id yet.");
+		return this._id;
+	}
+
 	public getHexId(): string {
 		const id = this.getId();
 		if (!id) throw new Error("This object does not have an id yet.");
