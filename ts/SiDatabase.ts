@@ -39,7 +39,7 @@ export class SiDatabase {
 
 		SiDatabase.neon.log("Database will connect.");
 
-		this.client = await MongoDB.MongoClient.connect(this.address, {useUnifiedTopology: true});
+		this.client = await MongoDB.MongoClient.connect(this.address);
 		this.connection = this.client.db(this.database);
 
 		SiDatabase.neon.log("Database did connect.");

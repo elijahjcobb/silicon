@@ -7,10 +7,9 @@
 
 import * as Mongo from "mongodb";
 import {SiDatabase} from "./SiDatabase";
-// import {SiPointer, SiPointerProps} from "./SiPointer";
 
 export type SiID = Mongo.ObjectId;
-export type SiObjectPropValue = string | number | boolean | Buffer | SiID | undefined | object; // | SiPointer<any>;
+export type SiObjectPropValue = string | number | boolean | Buffer | SiID | undefined | object;
 export type SiObjectProps<T extends object = {}> = { [key in keyof T]: SiObjectPropValue; };
 export type SiObjectBaseProperties = { _id: string | undefined, updatedAt: number, createdAt: number };
 
@@ -34,7 +33,6 @@ export class SiObject<T extends SiObjectProps<T>> {
 	private _updatedAt: number;
 	private _createdAt: number;
 	private readonly _props: T;
-	// private readonly _schema: SiSchema<T>;
 	private readonly _collection: string;
 
 	public constructor(collection: string, props: T) {
@@ -52,17 +50,6 @@ export class SiObject<T extends SiObjectProps<T>> {
 		return SiDatabase.getSession().getDatabase().collection(this._collection);
 
 	}
-
-	// private getSchemaKey(key: keyof T): {type: SiValue, required: boolean, unique: boolean} {
-	// 	const schema = this._schema[key];
-	// 	if (Object.keys(schema).includes("required")) {
-	// 		//@ts-ignore
-	// 		return {type: schema.type, unique: schema.unique, required: schema.unique};
-	// 	} else {
-	// 		//@ts-ignore
-	// 		return {type: schema.type, unique: false, required: false};
-	// 	}
-	// }
 
 	public getCollection(): string {
 
@@ -174,7 +161,10 @@ export class SiObject<T extends SiObjectProps<T>> {
 		this._createdAt = props.createdAt;
 
 		delete props._id;
+		
+		//@ts-ignore
 		delete props.updatedAt;
+		//@ts-ignore
 		delete props.createdAt;
 
 		for (const k in props) {
@@ -267,8 +257,9 @@ export class SiObject<T extends SiObjectProps<T>> {
 
 		if (this._id === undefined) throw new Error("SiObject does not contain an id. First call create().");
 		const props = (await this.getDatabaseCollection().findOne({_id: this._id}));
-		if (props === undefined) throw new Error(`Could not find props for SiObject with id: ${this._id.toHexString()}.`);
+		if (!props) throw new Error(`Could not find props for SiObject with id: ${this._id.toHexString()}.`);
 
+		//@ts-ignore
 		this.decode(props);
 
 	}

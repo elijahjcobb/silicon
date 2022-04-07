@@ -9,7 +9,7 @@ import {SiObject, SiDatabase, SiObjectBaseProperties, SiObjectProps} from "./ind
 import * as MongoDB from "mongodb";
 
 type SiQueryConstructAllowedKey = "$lt" | "$gt" | "$lte" | "$gte" | "$ne" | "$in" | "$nin";
-type SiQueryConstructAllowedBaseValue = string | number | boolean | MongoDB.ObjectID;
+type SiQueryConstructAllowedBaseValue = string | number | boolean | MongoDB.ObjectId;
 type SiQueryConstructAllowedValue<P extends object> = SiQueryConstructAllowedBaseValue | {
 	[key in SiQueryConstructAllowedKey]?: SiQueryConstructAllowedBaseValue | string[] | number[]
 } | SiQueryConstructor<P>[];
@@ -136,14 +136,6 @@ export class SiQuery<T extends SiObject<P>, P extends SiObjectProps<P>> {
 		return await query.getFirst();
 
 	}
-	//
-	// public static async getAll<T extends SiObject<P>, P extends object>(factory: SiObjectFactory<T, P>, limit: number = 100): Promise<T[]> {
-	//
-	// 	const query: SiQuery<T, P> = new SiQuery<T, P>(factory, {});
-	// 	query.setLimit(limit);
-	// 	return await query.getAll();
-	//
-	// }
 
 	public static init<T extends SiObject<P>, P extends SiObjectProps<P>>(factory: { new (arg: P): T }, query?: SiQueryConstructor<P>): SiQuery<T, P> {
 		return new SiQuery(factory, query ?? {});
